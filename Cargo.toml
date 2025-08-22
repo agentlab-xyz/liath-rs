@@ -1,7 +1,22 @@
 [package]
-name = "whitematter"
+name = "liath"
 version = "0.1.0"
 edition = "2021"
+description = "An AI-powered database system with key-value storage, vector search, and AI capabilities"
+authors = ["Dipankar Sarkar <me@dipankar.name>"]
+license = "MIT"
+repository = "https://github.com/nudgelang/liath-rs"
+keywords = ["database", "ai", "llm", "key-value", "lua", "vector-search"]
+categories = ["database", "ai", "web-programming"]
+readme = "README.md"
+
+[lib]
+name = "liath"
+path = "src/lib.rs"
+
+[[bin]]
+name = "liath"
+path = "src/bin/liath.rs"
 
 [dependencies]
 rocksdb = { version = "0.20.1", features = ["multi-threaded-cf"] }

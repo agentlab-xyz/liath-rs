@@ -27,9 +27,21 @@ Liath is an experimental high-performance version of [nudgelang/liath](https://g
 ## 🛠️ Prerequisites
 
 - Rust (latest stable version)
+- System dependencies (see [SYSTEM_DEPS.md](SYSTEM_DEPS.md))
 - CUDA toolkit (optional, for GPU acceleration)
 
-## 🚀 Quick Start
+## 📦 Installation
+
+### As a Library
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+liath = { git = "https://github.com/nudgelang/liath-rs" }
+```
+
+### From Source
 
 1. Clone the repository:
    ```bash
@@ -37,12 +49,39 @@ Liath is an experimental high-performance version of [nudgelang/liath](https://g
    cd liath-rs
    ```
 
-2. Build the project:
+2. Install system dependencies:
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get update
+   sudo apt-get install -y build-essential clang cmake libclang-dev libssl-dev pkg-config
+   ```
+
+3. Build the project:
    ```bash
    cargo build --release
    ```
 
 ## 💻 Usage
+
+### As a Library (Embedded Mode)
+
+```rust
+use liath::{EmbeddedLiath, Config};
+use std::path::PathBuf;
+
+// Create an embedded database instance
+let config = Config {
+    model_path: PathBuf::from("/path/to/model.gguf"),
+    tokenizer_path: PathBuf::from("/path/to/tokenizer.json"),
+    ..Default::default()
+};
+
+let db = EmbeddedLiath::new(config).unwrap();
+
+// Execute Lua queries
+let result = db.execute_lua("return db:get('key')").await;
+println!("{:?}", result);
+```
 
 ### CLI Mode
 
