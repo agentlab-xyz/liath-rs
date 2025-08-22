@@ -3,13 +3,12 @@ use crate::ai::{LLMWrapper, EmbeddingWrapper};
 use crate::lua::LuaVM;
 use crate::file::FileStorage;
 use crate::auth::AuthManager;
-use anyhow::{Result, Context};
+use anyhow::{Result, anyhow};
 use tokio::sync::Semaphore;
 use std::sync::{Arc, RwLock};
 use std::cell::RefCell;
-use tracing::{info, error, instrument};
-use rlua::{Context as LuaContext, Error as LuaError, Lua, Value as LuaValue};
-use candle_core::Device;
+use tracing::instrument;
+use rlua::{Context as LuaContext, Error as LuaError, Value as LuaValue};
 use usearch::{MetricKind, ScalarKind};
 
 pub struct QueryExecutor {
@@ -50,7 +49,7 @@ impl QueryExecutor {
     pub async fn execute(&self, query: &str, user_id: &str) -> Result<String> {
         let result = self.lua_vm.read().unwrap().execute_with_context(|lua_ctx| {
             self.register_db_functions(&lua_ctx, user_id.to_string())
-                .map_err(|e| LuaError::ExternalError(Arc::new(e)))?;
+                .map_err(|e| LuaError::ExternalError(Arc::new(anyhow!(e))))?;
             lua_ctx.load(query).eval()
         })?;
 
@@ -176,7 +175,7 @@ impl QueryExecutor {
             let permit = embedding_semaphore.try_acquire()
                 .map_err(|e| LuaError::RuntimeError(format!("Failed to acquire embedding semaphore: {}", e)))?;
             
-            let embedding_results = embedding.read().unwrap().generate(&texts)
+            let embedding_results = embedding.read().unwrap().generate(texts.iter().map(|s| s.as_str()).collect())
                 .map_err(|e| LuaError::RuntimeError(format!("Failed to generate embeddings: {}", e)))?;
             drop(permit);
             

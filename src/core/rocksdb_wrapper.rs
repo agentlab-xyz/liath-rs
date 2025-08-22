@@ -1,4 +1,4 @@
-use rocksdb::{TransactionDB, Options, WriteOptions, Transaction};
+use rocksdb::{TransactionDB, Options, Transaction};
 use std::path::Path;
 use anyhow::{Result, Context};
 
@@ -42,7 +42,7 @@ impl RocksDBWrapper {
 
     // New method to perform a write operation within a transaction
     pub fn transaction_put(&self, key: &[u8], value: &[u8]) -> Result<()> {
-        let mut tx = self.db.transaction();
+        let tx = self.db.transaction();
         tx.put(key, value)
             .context("Failed to put value in transaction")?;
         tx.commit()

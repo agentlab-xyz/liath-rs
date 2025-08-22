@@ -19,14 +19,14 @@ name = "liath"
 path = "src/bin/liath.rs"
 
 [dependencies]
-rocksdb = { version = "0.20.1", features = ["multi-threaded-cf"] }
+rocksdb = { version = "0.24.0", features = ["multi-threaded-cf"] }
 usearch = "2.0.1"
 candle-core = "0.6.0"
 candle-transformers = "0.6.0"
 candle-examples = "0.6.0"
 tokenizers = "0.13.3"
 fastembed = "3"
-rlua = "0.19.4"
+rlua = "0.20.1"
 tokio = { version = "1.28.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

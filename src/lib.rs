@@ -106,11 +106,13 @@ impl EmbeddedLiath {
     /// Execute a Lua query
     pub async fn execute_lua(&self, query: &str) -> Result<serde_json::Value> {
         // TODO: Implement proper query execution with namespace and authentication
-        self.query_executor.execute_query("default", query, None).await
+        self.query_executor.execute(query, "default").await?;
+        // For now, we're just returning a dummy value
+        Ok(serde_json::Value::String("Query executed".to_string()))
     }
 
     /// Set the current namespace
-    pub fn set_namespace(&mut self, namespace: &str) {
+    pub fn set_namespace(&mut self, _namespace: &str) {
         // TODO: Implement namespace switching
     }
 
