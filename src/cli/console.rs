@@ -1,6 +1,7 @@
 use std::io::{self, Write};
 use crate::query::QueryExecutor;
 use anyhow::Result;
+#[cfg(feature = "vector")]
 use usearch::{MetricKind, ScalarKind};
 
 pub async fn run(query_executor: QueryExecutor) -> Result<()> {
@@ -42,16 +43,22 @@ pub async fn run(query_executor: QueryExecutor) -> Result<()> {
                         "create" if parts.len() == 6 => {
                             let name = parts[2];
                             let dims: usize = parts[3].parse().unwrap_or(384);
+                            #[cfg(feature = "vector")]
                             let metric = match parts[4].to_lowercase().as_str() {
                                 "cosine" => MetricKind::Cos,
                                 "euclidean" => MetricKind::L2sq,
                                 _ => MetricKind::Cos,
                             };
+                            #[cfg(feature = "vector")]
                             let scalar = match parts[5].to_lowercase().as_str() {
                                 "f16" => ScalarKind::F16,
                                 _ => ScalarKind::F32,
                             };
-                            if let Err(e) = query_executor.create_namespace(name, dims, metric, scalar) {
+                            #[cfg(feature = "vector")]
+                            let res = query_executor.create_namespace(name, dims, metric, scalar);
+                            #[cfg(not(feature = "vector"))]
+                            let res = query_executor.create_namespace_basic(name);
+                            if let Err(e) = res {
                                 eprintln!("Error: {}", e);
                             } else {
                                 println!("Created namespace '{}'.", name);

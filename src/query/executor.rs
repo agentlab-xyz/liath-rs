@@ -8,7 +8,10 @@ use tokio::sync::Semaphore;
 use std::sync::{Arc, RwLock};
 use tracing::instrument;
 use rlua::{Context as LuaContext, Error as LuaError, Value as LuaValue};
+#[cfg(feature = "vector")]
 use usearch::{MetricKind, ScalarKind};
+#[cfg(not(feature = "vector"))]
+use crate::core::{MetricKind, ScalarKind};
 
 #[derive(Clone)]
 pub struct QueryExecutor {
@@ -75,6 +78,11 @@ impl QueryExecutor {
             .unwrap()
             .create_namespace(name, dimensions, metric, scalar)
     }
+    #[cfg(not(feature = "vector"))]
+    pub fn create_namespace_basic(&self, name: &str) -> anyhow::Result<()> {
+        self.create_namespace(name, 128, MetricKind::Cos, ScalarKind::F32)
+    }
+
 
     pub fn put(&self, namespace: &str, key: &[u8], value: &[u8]) -> Result<()> {
         let ns = self

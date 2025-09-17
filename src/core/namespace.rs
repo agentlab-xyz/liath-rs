@@ -3,7 +3,14 @@ use std::sync::{Arc, RwLock};
 use crate::core::FjallWrapper;
 use crate::vector::UsearchWrapper;
 use anyhow::{Result, Context};
+#[cfg(feature = "vector")]
 use usearch::{MetricKind, ScalarKind};
+#[cfg(not(feature = "vector"))]
+#[derive(Clone, Copy)]
+pub enum MetricKind { Cos, L2sq }
+#[cfg(not(feature = "vector"))]
+#[derive(Clone, Copy)]
+pub enum ScalarKind { F32, F16 }
 
 #[derive(Clone)]
 pub struct Namespace {
@@ -39,7 +46,7 @@ impl NamespaceManager {
         
         let db = FjallWrapper::new(format!("data/{}", name))
             .context(format!("Failed to create Fjall for namespace '{}'", name))?;
-        let vector_db = UsearchWrapper::new(dimensions, metric, scalar)
+        let vector_db = UsearchWrapper::new(dimensions, (), ())
             .context(format!("Failed to create UsearchWrapper for namespace '{}'", name))?;
         
         namespaces.insert(name.to_string(), Namespace::new(db, vector_db));

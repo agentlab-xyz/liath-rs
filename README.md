@@ -65,9 +65,9 @@ fn main() -> anyhow::Result<()> {
 
 Start here:
 - docs/guide.md — quickstart, CLI and server usage
+- docs/architecture.md — module overview and data flow
 - docs/system-deps.md — platform packages
 - docs/summary.md — current state and roadmap
-
 The code is organized into small modules under `src/` (core, ai, vector, lua, file, query, auth, cli, server).
 
 ## Status

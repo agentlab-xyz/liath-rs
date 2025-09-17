@@ -122,6 +122,7 @@ impl EmbeddedLiath {
     }
 
     // Convenience APIs
+    #[cfg(feature = "vector")]
     pub fn create_namespace(
         &self,
         name: &str,
@@ -142,5 +143,11 @@ impl EmbeddedLiath {
 
     pub fn delete(&self, namespace: &str, key: &[u8]) -> Result<()> {
         self.query_executor.delete(namespace, key)
+    }
+
+    #[cfg(not(feature = "vector"))]
+    pub fn create_namespace_basic(&self, name: &str) -> anyhow::Result<()> {
+        use crate::core::{MetricKind, ScalarKind};
+        self.query_executor.create_namespace(name, 128, MetricKind::Cos, ScalarKind::F32)
     }
 }
