@@ -1,4 +1,4 @@
-# Liath Rust Library Transformation Status
+# Project Status
 
 ## Completed Tasks
 
@@ -28,7 +28,7 @@
 6. ✅ **Documented System Dependencies**
    - Created SYSTEM_DEPS.md with installation instructions
 
-## Remaining Tasks
+## Remaining Tasks (high level)
 
 1. ⏳ **Improve Module Structure**
    - Ensure all public types are properly exported

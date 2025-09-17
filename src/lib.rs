@@ -1,9 +1,9 @@
 //! Liath: An AI-powered database system with key-value storage, vector search, and AI capabilities.
 //!
 //! This library provides:
-//! - A database system built on RocksDB
+//! - A database system built on Fjall
 //! - Lua as the query language
-//! - AI integration capabilities (LLM inference, embeddings)
+//! - AI integration capabilities (embeddings)
 //! - Vector search functionality
 //! - File storage operations
 //! - Authentication and authorization
@@ -23,36 +23,34 @@ pub mod lua;
 pub mod file;
 pub mod query;
 pub mod auth;
+pub mod cli;
+#[cfg(feature = "server")]
+pub mod server;
 
 // Re-export key types
-pub use crate::core::{RocksDBWrapper, NamespaceManager};
+pub use crate::core::{FjallWrapper, NamespaceManager};
 pub use crate::vector::UsearchWrapper;
-pub use crate::ai::{LLMWrapper, EmbeddingWrapper};
+pub use crate::ai::EmbeddingWrapper;
 pub use crate::lua::LuaVM;
 pub use crate::file::FileStorage;
 pub use crate::query::executor::QueryExecutor;
 pub use crate::auth::AuthManager;
 
 use anyhow::Result;
-use candle_core::Device;
 use std::path::PathBuf;
 
 /// Configuration for the Liath database
 #[derive(Debug, Clone)]
 pub struct Config {
-    pub device: Device,
-    pub model_path: PathBuf,
-    pub tokenizer_path: PathBuf,
     pub data_dir: PathBuf,
+    pub luarocks_path: Option<PathBuf>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            device: Device::Cpu,
-            model_path: PathBuf::from("model.gguf"),
-            tokenizer_path: PathBuf::from("tokenizer.json"),
             data_dir: PathBuf::from("./data"),
+            luarocks_path: None,
         }
     }
 }
@@ -68,10 +66,10 @@ impl EmbeddedLiath {
     /// Create a new embedded Liath instance
     pub fn new(config: Config) -> Result<Self> {
         let namespace_manager = NamespaceManager::new();
-        let llm = LLMWrapper::new(config.model_path, config.tokenizer_path, config.device)?;
         let embedding = EmbeddingWrapper::new()?;
-        let lua_vm = LuaVM::new(std::path::PathBuf::from("path/to/luarocks"))?; // TODO: Make configurable
-        let file_storage = FileStorage::new("path/to/file/storage")?; // TODO: Use config.data_dir
+        let lua_vm = LuaVM::new(config.luarocks_path.clone().unwrap_or_else(|| std::path::PathBuf::from("luarocks")))?; // Uses `luarocks` from PATH by default
+        let file_storage_path = config.data_dir.join("files");
+        let file_storage = FileStorage::new(file_storage_path)?;
         let mut auth_manager = AuthManager::new();
 
         // Add a default admin user
@@ -86,17 +84,14 @@ impl EmbeddedLiath {
             "process_file".to_string(),
             "generate_embedding".to_string(),
             "similarity_search".to_string(),
-            "llm_query".to_string(),
         ]);
 
         let query_executor = QueryExecutor::new(
             namespace_manager,
-            llm,
             embedding,
             lua_vm,
             file_storage,
             auth_manager,
-            5,  // max_concurrent_llm
             10, // max_concurrent_embedding
         );
 
@@ -119,5 +114,33 @@ impl EmbeddedLiath {
     /// Close the database connection
     pub fn close(&self) {
         // TODO: Implement proper cleanup
+    }
+
+    /// Access the underlying query executor (cloned)
+    pub fn query_executor(&self) -> QueryExecutor {
+        self.query_executor.clone()
+    }
+
+    // Convenience APIs
+    pub fn create_namespace(
+        &self,
+        name: &str,
+        dimensions: usize,
+        metric: usearch::MetricKind,
+        scalar: usearch::ScalarKind,
+    ) -> Result<()> {
+        self.query_executor.create_namespace(name, dimensions, metric, scalar)
+    }
+
+    pub fn put(&self, namespace: &str, key: &[u8], value: &[u8]) -> Result<()> {
+        self.query_executor.put(namespace, key, value)
+    }
+
+    pub fn get(&self, namespace: &str, key: &[u8]) -> Result<Option<Vec<u8>>> {
+        self.query_executor.get(namespace, key)
+    }
+
+    pub fn delete(&self, namespace: &str, key: &[u8]) -> Result<()> {
+        self.query_executor.delete(namespace, key)
     }
 }

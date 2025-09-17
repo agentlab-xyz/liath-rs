@@ -1,5 +1,5 @@
-mod rocksdb_wrapper;
+mod fjall_wrapper;
 mod namespace;
 
-pub use rocksdb_wrapper::RocksDBWrapper;
+pub use fjall_wrapper::FjallWrapper;
 pub use namespace::{Namespace, NamespaceManager};

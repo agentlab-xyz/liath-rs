@@ -1,45 +1,69 @@
-use fastembed::{TextEmbedding, InitOptions};
+use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
 use anyhow::{Result, anyhow};
+use std::sync::Arc;
 
+/// A wrapper around fastembed TextEmbedding for generating text embeddings
 pub struct EmbeddingWrapper {
-    model: TextEmbedding,
-    dimension: usize,
+    model: Arc<TextEmbedding>,
 }
 
 impl EmbeddingWrapper {
+    /// Create a new EmbeddingWrapper with default options
     pub fn new() -> Result<Self> {
         let model = TextEmbedding::try_new(Default::default())
             .map_err(|e| anyhow!("Failed to create TextEmbedding with default options: {}", e))?;
-        let dimension = Self::get_dimension(&model)?;
-        Ok(Self { model, dimension })
+        
+        Ok(Self { 
+            model: Arc::new(model),
+        })
     }
 
+    /// Create a new EmbeddingWrapper with custom options
     pub fn with_options(options: InitOptions) -> Result<Self> {
         let model = TextEmbedding::try_new(options)
             .map_err(|e| anyhow!("Failed to create TextEmbedding with custom options: {}", e))?;
-        let dimension = Self::get_dimension(&model)?;
-        Ok(Self { model, dimension })
+        
+        Ok(Self { 
+            model: Arc::new(model),
+        })
     }
 
+    /// Create a new EmbeddingWrapper with a specific model
+    pub fn with_model(model: EmbeddingModel) -> Result<Self> {
+        let mut options = InitOptions::default();
+        options.model_name = model;
+        Self::with_options(options)
+    }
+
+    /// Generate embeddings for a list of texts
     pub fn generate(&self, texts: Vec<&str>) -> Result<Vec<Vec<f32>>> {
         self.model.embed(texts, None)
             .map_err(|e| anyhow!("Failed to generate embeddings: {}", e))
     }
 
-    pub fn embedding_dimension(&self) -> usize {
-        self.dimension
+    /// Generate embeddings for a single text
+    pub fn generate_one(&self, text: &str) -> Result<Vec<f32>> {
+        let embeddings = self.model.embed(vec![text], None)
+            .map_err(|e| anyhow!("Failed to generate embedding: {}", e))?;
+        Ok(embeddings.into_iter().next().unwrap_or_default())
     }
 
-    fn get_dimension(model: &TextEmbedding) -> Result<usize> {
-        let sample_text = "Sample text for dimension check";
-        let sample_embedding = model.embed(vec![sample_text], None)
-            .map_err(|e| anyhow!("Failed to generate sample embedding: {}", e))?;
-        Ok(sample_embedding[0].len())
+    /// Get a reference to the underlying model
+    pub fn model(&self) -> &TextEmbedding {
+        &self.model
     }
 }
 
 impl Default for EmbeddingWrapper {
     fn default() -> Self {
         Self::new().expect("Failed to create default EmbeddingWrapper")
+    }
+}
+
+impl Clone for EmbeddingWrapper {
+    fn clone(&self) -> Self {
+        Self {
+            model: Arc::clone(&self.model),
+        }
     }
 }

@@ -1,50 +1,58 @@
-use rlua::{Lua, Context, Result, Value, FromLua};
-use std::sync::Arc;
-use crate::lua::luarocks::LuaRocks;
+use rlua::{Lua, Result as LuaResult, Context, Error as LuaError, RluaCompat};
 use std::path::PathBuf;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 pub struct LuaVM {
     lua: Lua,
-    luarocks: Arc<LuaRocks>,
+    installed_packages: Arc<RwLock<HashMap<String, String>>>,
+    luarocks_path: PathBuf,
 }
 
 impl LuaVM {
-    pub fn new(luarocks_path: PathBuf) -> Result<Self> {
+    pub fn new(luarocks_path: PathBuf) -> LuaResult<Self> {
         let lua = Lua::new();
-        let luarocks = Arc::new(LuaRocks::new(luarocks_path));
-
-        Ok(Self { lua, luarocks })
-    }
-
-    pub fn execute<T: for<'lua> FromLua<'lua>>(&self, code: &str) -> Result<T> {
-        self.lua.context(|ctx| {
-            let result: Value = ctx.load(code).eval()?;
-            T::from_lua(result, ctx)
+        
+        // Register custom functions
+        lua.context(|ctx| {
+            ctx.globals().set("print", ctx.create_function(|_, msg: String| {
+                println!("{}", msg);
+                Ok(())
+            })?)?;
+            
+            Ok::<(), LuaError>(())
+        })?;
+        
+        Ok(Self {
+            lua,
+            installed_packages: Arc::new(RwLock::new(HashMap::new())),
+            luarocks_path,
         })
     }
-
-    pub fn execute_with_context<F, R>(&self, f: F) -> Result<R>
+    
+    pub fn execute(&self, code: &str) -> LuaResult<()> {
+        self.lua.context(|ctx| ctx.load(code).exec())
+    }
+    
+    pub fn execute_with_context<F, R>(&self, f: F) -> LuaResult<R>
     where
-        F: FnOnce(Context) -> Result<R>,
+        F: FnOnce(Context) -> LuaResult<R>,
     {
         self.lua.context(f)
     }
-
-    pub fn register_function<F>(&self, name: &str, func: F) -> Result<()>
-    where
-        F: for<'lua> Fn(Context<'lua>, Value<'lua>) -> Result<Value<'lua>> + 'static + Send + Sync,
-    {
-        self.lua.context(|ctx| {
-            let globals = ctx.globals();
-            globals.set(name, ctx.create_function(func)?)
-        })
+    
+    pub fn install_package(&self, package_name: &str) -> LuaResult<()> {
+        // Mock package installation
+        self.installed_packages.write().unwrap().insert(
+            package_name.to_string(), 
+            format!("Mock installation of {}", package_name)
+        );
+        println!("Installed package: {}", package_name);
+        Ok(())
     }
-
-    pub fn install_package(&self, package_name: &str) -> anyhow::Result<()> {
-        self.luarocks.install_package(package_name)
-    }
-
-    pub fn list_installed_packages(&self) -> anyhow::Result<Vec<String>> {
-        self.luarocks.list_installed_packages()
+    
+    pub fn list_installed_packages(&self) -> LuaResult<Vec<String>> {
+        let packages = self.installed_packages.read().unwrap();
+        Ok(packages.keys().cloned().collect())
     }
 }

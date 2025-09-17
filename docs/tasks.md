@@ -1,4 +1,4 @@
-# Tasks to Transform liath-rs into a Proper Cargo Library
+# Tasks
 
 ## 1. Restructure Cargo.toml
 - [x] Split into library and binary sections

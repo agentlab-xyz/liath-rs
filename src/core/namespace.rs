@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use crate::core::RocksDBWrapper;
+use crate::core::FjallWrapper;
 use crate::vector::UsearchWrapper;
 use anyhow::{Result, Context};
 use usearch::{MetricKind, ScalarKind};
 
 #[derive(Clone)]
 pub struct Namespace {
-    pub db: Arc<RocksDBWrapper>,
+    pub db: Arc<FjallWrapper>,
     pub vector_db: Arc<UsearchWrapper>,
 }
 
 impl Namespace {
-    pub fn new(db: RocksDBWrapper, vector_db: UsearchWrapper) -> Self {
+    pub fn new(db: FjallWrapper, vector_db: UsearchWrapper) -> Self {
         Self { 
             db: Arc::new(db), 
             vector_db: Arc::new(vector_db) 
@@ -37,8 +37,8 @@ impl NamespaceManager {
             return Err(anyhow::anyhow!("Namespace '{}' already exists", name));
         }
         
-        let db = RocksDBWrapper::new(format!("data/{}", name))
-            .context(format!("Failed to create RocksDB for namespace '{}'", name))?;
+        let db = FjallWrapper::new(format!("data/{}", name))
+            .context(format!("Failed to create Fjall for namespace '{}'", name))?;
         let vector_db = UsearchWrapper::new(dimensions, metric, scalar)
             .context(format!("Failed to create UsearchWrapper for namespace '{}'", name))?;
         

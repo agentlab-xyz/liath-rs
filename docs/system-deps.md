@@ -1,23 +1,23 @@
 # System Dependencies
 
-Liath requires certain system dependencies to be installed:
+Liath depends on a C toolchain and a few common libraries.
 
-## Ubuntu/Debian
+Ubuntu/Debian:
 ```bash
 sudo apt-get update
 sudo apt-get install -y build-essential clang cmake libclang-dev libssl-dev pkg-config
 ```
 
-## CentOS/RHEL/Fedora
+CentOS/RHEL/Fedora:
 ```bash
 sudo yum install -y gcc gcc-c++ make cmake clang openssl-devel
 ```
 
-## macOS
+macOS:
 ```bash
-# Install Xcode command line tools
+# Xcode command line tools
 xcode-select --install
 
-# Install with Homebrew
+# With Homebrew
 brew install cmake openssl@3
 ```

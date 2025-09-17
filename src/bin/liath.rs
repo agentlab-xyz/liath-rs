@@ -1,23 +1,15 @@
 use clap::{Parser, Subcommand};
 use liath::{EmbeddedLiath, Config};
 use anyhow::Result;
-use candle_core::Device;
-use std::path::PathBuf;
+use liath::cli::console;
+#[cfg(feature = "server")]
+use liath::server::run_server;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
-
-    #[arg(long, default_value = "cpu")]
-    device: String,
-
-    #[arg(long)]
-    model_path: PathBuf,
-
-    #[arg(long)]
-    tokenizer_path: PathBuf,
 }
 
 #[derive(Subcommand)]
@@ -32,30 +24,25 @@ async fn main() -> Result<()> {
 
     let cli = Cli::parse();
 
-    let device = match cli.device.as_str() {
-        "cpu" => Device::Cpu,
-        "cuda" => Device::new_cuda(0)?,
-        _ => anyhow::bail!("Invalid device specified"),
-    };
-
-    let config = Config {
-        device,
-        model_path: cli.model_path,
-        tokenizer_path: cli.tokenizer_path,
-        data_dir: PathBuf::from("./data"), // TODO: Make configurable
-    };
+    // Create a minimal config without device-specific settings
+    let config = Config::default();
 
     let liath = EmbeddedLiath::new(config)?;
 
     match &cli.command {
         Some(Commands::Cli) => {
-            // TODO: Implement CLI interface
-            println!("CLI mode not yet implemented");
+            console::run(liath.query_executor()).await?;
         }
         Some(Commands::Server { port }) => {
             let port = port.unwrap_or(3000);
-            // TODO: Implement server interface
-            println!("Server mode not yet implemented. Would run on port {}", port);
+            #[cfg(feature = "server")]
+            {
+                run_server(port, liath.query_executor()).await?;
+            }
+            #[cfg(not(feature = "server"))]
+            {
+                println!("Rebuild with `--features server` to enable HTTP server.");
+            }
         }
         None => {
             println!("Please specify a command: cli or server");

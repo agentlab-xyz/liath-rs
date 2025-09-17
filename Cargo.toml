@@ -18,14 +18,18 @@ path = "src/lib.rs"
 name = "liath"
 path = "src/bin/liath.rs"
 
+[features]
+default = ["embedding", "vector"]
+embedding = ["fastembed"]
+vector = ["usearch"]
+server = ["axum"]
+
 [dependencies]
-rocksdb = { version = "0.24.0", features = ["multi-threaded-cf"] }
-usearch = "2.0.1"
-candle-core = "0.6.0"
-candle-transformers = "0.6.0"
-candle-examples = "0.6.0"
-tokenizers = "0.13.3"
-fastembed = "3"
+fjall = "2.2"
+usearch = { version = "2.0.1", optional = true }
+# Simplified dependencies focusing on core functionality
+tokenizers = "0.19.1"
+fastembed = { version = "3.14.1", optional = true }
 rlua = "0.20.1"
 tokio = { version = "1.28.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -37,13 +41,18 @@ tracing-subscriber = "0.3"
 clap = { version = "4.3", features = ["derive"] }
 futures = "0.3"
 async-trait = "0.1.68"
-hf-hub = "0.3.2"
-axum = "0.6.0"
+axum = { version = "0.6.0", optional = true }
+# Explicitly specify rand version to resolve conflicts
+rand = "0.8.5"
+half = "2.6.0"
+uuid = { version = "1", features = ["v4"] }
 
-[dependencies.uuid]
-version = "1.10.0"
-features = [
-    "v4",                # Lets you generate random UUIDs
-    "fast-rng",          # Use a faster (but still sufficiently random) RNG
-    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
-]
+# Resolve version conflicts
+[dependencies.rand_core]
+version = "0.6.4"
+[dependencies.rand_distr]
+version = "0.4.3"
+
+# Force ort-sys version expected by ort 2.0.0-rc.4 to avoid API mismatches
+[dependencies.ort-sys]
+version = "=2.0.0-rc.4"

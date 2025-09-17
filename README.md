@@ -1,141 +1,79 @@
-# 🚀 Liath
+# Liath
 
-[![Rust](https://img.shields.io/badge/Rust-1.75+-blue.svg)](https://www.rust-lang.org)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Experimental](https://img.shields.io/badge/status-experimental-orange.svg)](https://github.com/nudgelang/liath)
+Liath is a small, embeddable data engine with:
+- Key–value storage built on Fjall
+- Optional vector search (USearch)
+- Optional text embeddings (FastEmbed / ONNX Runtime)
+- A Lua runtime for scripting
+- A CLI and an optional HTTP API
 
-Liath is an experimental high-performance version of [nudgelang/liath](https://github.com/nudgelang/liath). It is an AI-first database system that integrates AI capabilities directly into its core functionality. It combines traditional database operations with AI features such as language model inference and vector similarity search, all accessible through a Lua-based query language.
+Liath emphasizes a simple, composable core you can embed in your own projects, with opt‑in features when you need search, embeddings, or an HTTP interface.
 
-## ✨ Key Features
+## Features
 
-- 🔌 **RocksDB Storage**: High-performance key-value operations with multi-threaded column families
-- 🤖 **AI Integration**: 
-  - Integrated Language Model (LLM) inference using Candle
-  - Vector embeddings with FastEmbed
-  - Similarity search powered by USearch
-- 📝 **Lua Query Language**: Flexible and powerful data manipulation through rlua
-- 📁 **File Operations**: Built-in file storage and processing
-- 🔐 **Authentication**: Secure user management system
-- 🌐 **Server & CLI**: 
-  - HTTP API with Axum
-  - Command-line interface
-- ⚡ **Performance**: 
-  - Async runtime with Tokio
-  - Multi-threaded operations
-  - GPU acceleration support (CUDA)
+- Storage: Namespaced key–value store using Fjall
+- Scripting: Execute Lua to interact with data and utilities
+- Vector search: USearch index per namespace (optional)
+- Embeddings: FastEmbed models for text (optional)
+- HTTP API: Axum server (optional)
 
-## 🛠️ Prerequisites
+Feature flags (Cargo):
+- `embedding` (default): enable FastEmbed/ONNX Runtime
+- `vector` (default): enable USearch
+- `server` (off by default): enable Axum HTTP API
 
-- Rust (latest stable version)
-- System dependencies (see [SYSTEM_DEPS.md](SYSTEM_DEPS.md))
-- CUDA toolkit (optional, for GPU acceleration)
+## Quick Start
 
-## 📦 Installation
+Prerequisites:
+- Rust (stable)
+- System requirements listed in docs/system-deps.md
 
-### As a Library
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-liath = { git = "https://github.com/nudgelang/liath-rs" }
+Build from source:
+```bash
+git clone https://github.com/nudgelang/liath-rs.git
+cd liath-rs
+cargo build
 ```
 
-### From Source
+Run the CLI:
+```bash
+cargo run --bin liath -- cli
+```
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/nudgelang/liath-rs.git
-   cd liath-rs
-   ```
+Start the HTTP server (localhost:3000):
+```bash
+cargo run --features server --bin liath -- server --port 3000
+```
 
-2. Install system dependencies:
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get update
-   sudo apt-get install -y build-essential clang cmake libclang-dev libssl-dev pkg-config
-   ```
-
-3. Build the project:
-   ```bash
-   cargo build --release
-   ```
-
-## 💻 Usage
-
-### As a Library (Embedded Mode)
-
+Use as a library (typed API):
 ```rust
 use liath::{EmbeddedLiath, Config};
-use std::path::PathBuf;
 
-// Create an embedded database instance
-let config = Config {
-    model_path: PathBuf::from("/path/to/model.gguf"),
-    tokenizer_path: PathBuf::from("/path/to/tokenizer.json"),
-    ..Default::default()
-};
+fn main() -> anyhow::Result<()> {
+    let liath = EmbeddedLiath::new(Config::default())?;
 
-let db = EmbeddedLiath::new(config).unwrap();
-
-// Execute Lua queries
-let result = db.execute_lua("return db:get('key')").await;
-println!("{:?}", result);
+    // Create a namespace, then put/get a key
+    liath.create_namespace("docs", 128, usearch::MetricKind::Cos, usearch::ScalarKind::F32)?;
+    liath.put("docs", b"hello", b"world")?;
+    let value = liath.get("docs", b"hello")?;
+    assert_eq!(value.as_deref(), Some(b"world".as_ref()));
+    Ok(())
+}
 ```
 
-### CLI Mode
+## Documentation
 
-```bash
-cargo run --release -- --device cpu --model-path /path/to/model.gguf --tokenizer-path /path/to/tokenizer.json cli
-```
+Start here:
+- docs/guide.md — quickstart, CLI and server usage
+- docs/system-deps.md — platform packages
+- docs/summary.md — current state and roadmap
 
-### Server Mode
+The code is organized into small modules under `src/` (core, ai, vector, lua, file, query, auth, cli, server).
 
-```bash
-cargo run --release -- --device cuda --model-path /path/to/model.gguf --tokenizer-path /path/to/tokenizer.json server
-```
+## Status
 
-## 📝 Lua Query Examples
+Liath is under active development. The storage core and CLI are usable; server and embeddings are opt‑in and evolving. See docs/status.md and docs/tasks.md for details.
 
-```lua
--- Create a namespace
-create_namespace("users")
+## License
 
--- Insert data
-insert("users", "user123", "Alice")
-
--- Generate text using the LLM
-local response = llm_query("What is the capital of France?", 100)
-print(response)
-
--- Perform a similarity search
-local embedding = generate_embedding("Hello, world!")
-local results = similarity_search("users", embedding, 5)
-print(results)
-```
-
-## ⚙️ Configuration
-
-Create a `config.toml` file to customize your setup:
-
-```toml
-[database]
-data_dir = "/path/to/data"
-
-[llm]
-max_concurrent = 5
-
-[embedding]
-max_concurrent = 10
-
-[auth]
-default_user = "admin"
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT
