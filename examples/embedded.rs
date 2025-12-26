@@ -1,30 +1,39 @@
 //! Example of using Liath as an embedded database
 
 use liath::{EmbeddedLiath, Config};
-use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a configuration (in a real app, you'd provide actual paths)
-    let config = Config {
-        model_path: PathBuf::from("model.gguf"),
-        tokenizer_path: PathBuf::from("tokenizer.json"),
-        ..Default::default()
-    };
+    // Create a configuration with default settings
+    let config = Config::default();
 
     // Create an embedded database instance
-    // Note: This will fail if the model files don't exist at the specified paths
     match EmbeddedLiath::new(config) {
-        Ok(_db) => {
+        Ok(db) => {
             println!("Successfully created embedded Liath instance");
-            // In a real application, you would:
-            // 1. Execute Lua queries
-            // 2. Perform database operations
-            // 3. Close the database when done
+
+            // Create a namespace and perform basic operations
+            #[cfg(feature = "vector")]
+            {
+                use usearch::{MetricKind, ScalarKind};
+                if let Err(e) = db.create_namespace("example", 384, MetricKind::Cos, ScalarKind::F32) {
+                    println!("Note: {}", e);
+                }
+            }
+
+            // Put and get a value
+            db.put("example", b"greeting", b"Hello, Liath!")?;
+            if let Some(value) = db.get("example", b"greeting")? {
+                println!("Retrieved: {}", String::from_utf8_lossy(&value));
+            }
+
+            // Clean up
+            db.delete("example", b"greeting")?;
+            println!("Example completed successfully!");
         }
         Err(e) => {
             println!("Failed to create embedded Liath instance: {}", e);
-            println!("This is expected if you don't have the model files installed.");
+            println!("This may happen if embedding models fail to load.");
         }
     }
 

@@ -3,6 +3,7 @@ name = "liath"
 version = "0.1.0"
 edition = "2021"
 description = "An AI-powered database system with key-value storage, vector search, and AI capabilities"
+default-run = "liath"
 authors = ["Dipankar Sarkar <me@dipankar.name>"]
 license = "MIT"
 repository = "https://github.com/skelf-research/liath-rs"
@@ -19,17 +20,19 @@ name = "liath"
 path = "src/bin/liath.rs"
 
 [features]
-default = ["embedding", "vector"]
+default = ["embedding", "vector", "tui"]
 embedding = ["fastembed"]
 vector = ["usearch"]
 server = ["axum"]
+tui = ["ratatui", "crossterm"]
+mcp = []
 
 [dependencies]
 fjall = "2.2"
 usearch = { version = "2.0.1", optional = true }
 # Simplified dependencies focusing on core functionality
 tokenizers = "0.19.1"
-fastembed = { version = "3.14.1", optional = true }
+fastembed = { version = "4", optional = true }
 rlua = "0.20.1"
 tokio = { version = "1.28.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -41,7 +44,10 @@ tracing-subscriber = "0.3"
 clap = { version = "4.3", features = ["derive"] }
 futures = "0.3"
 async-trait = "0.1.68"
-axum = { version = "0.6.0", optional = true }
+axum = { version = "0.7", optional = true }
+# TUI dependencies
+ratatui = { version = "0.29", optional = true }
+crossterm = { version = "0.28", optional = true }
 # Explicitly specify rand version to resolve conflicts
 rand = "0.8.5"
 half = "2.6.0"
@@ -53,6 +59,5 @@ version = "0.6.4"
 [dependencies.rand_distr]
 version = "0.4.3"
 
-# Force ort-sys version expected by ort 2.0.0-rc.4 to avoid API mismatches
-[dependencies.ort-sys]
-version = "=2.0.0-rc.4"
+[dev-dependencies]
+tempfile = "3"

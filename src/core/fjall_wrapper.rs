@@ -52,4 +52,20 @@ impl FjallWrapper {
             .context("Failed to commit batch")?;
         Ok(())
     }
+
+    /// Iterate over all key-value pairs in the partition
+    pub fn iter(&self) -> impl Iterator<Item = Result<(Vec<u8>, Vec<u8>)>> + '_ {
+        self.partition.iter().map(|result| {
+            result
+                .map(|(k, v)| (k.to_vec(), v.to_vec()))
+                .context("Failed to iterate over DB")
+        })
+    }
+
+    /// Flush all pending writes to disk
+    pub fn flush(&self) -> Result<()> {
+        self.keyspace.persist(fjall::PersistMode::SyncAll)
+            .context("Failed to flush keyspace")?;
+        Ok(())
+    }
 }

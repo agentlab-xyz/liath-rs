@@ -28,8 +28,8 @@ pub async fn run(query_executor: QueryExecutor) -> Result<()> {
         }
 
         // Simple helper commands
-        if input.starts_with(':') {
-            let parts: Vec<&str> = input[1..].split_whitespace().collect();
+        if let Some(cmd) = input.strip_prefix(':') {
+            let parts: Vec<&str> = cmd.split_whitespace().collect();
             if parts.is_empty() {
                 continue;
             }
