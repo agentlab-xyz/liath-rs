@@ -85,6 +85,8 @@ pub mod error;
 pub mod server;
 #[cfg(feature = "mcp")]
 pub mod mcp;
+#[cfg(feature = "python")]
+pub mod python;
 
 // Re-export key types
 pub use crate::core::{FjallWrapper, NamespaceManager};

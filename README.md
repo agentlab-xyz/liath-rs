@@ -1,148 +1,66 @@
 # Liath
 
-Liath is a fast, embeddable database designed for running AI agents. It combines:
-- Key-value storage built on Fjall
-- Vector similarity search (USearch)
-- Text embeddings (FastEmbed / ONNX Runtime)
-- Agent memory and conversation management
-- A Lua scripting runtime
-- TUI and CLI interfaces
-- Optional HTTP API and MCP server
+**The SQLite for AI Agents** - Programmable memory that agents can query with code.
 
-Liath emphasizes a simple, composable core you can embed in your own projects, with opt-in features for AI agent workflows.
+## The Key Idea
 
-## Features
+**Agents can write programs to query their own memory safely.**
 
-- **Storage**: Namespaced key-value store using Fjall with persistence
-- **Vector Search**: USearch index per namespace for similarity queries
-- **Embeddings**: FastEmbed models for automatic text-to-vector conversion
-- **Agent API**: Memory storage, conversation tracking, and tool state management
-- **Scripting**: Lua runtime for custom queries and data manipulation
-- **TUI**: Interactive terminal interface with history and pagination
-- **HTTP API**: RESTful server for remote access (optional)
-- **MCP Server**: Model Context Protocol for AI assistant integration (optional)
+```
+┌────────────────────────────────────────────────────────────────┐
+│                    Traditional Vector DB                        │
+│  Agent → Fixed API → semantic_search("query", 5) → Results     │
+└────────────────────────────────────────────────────────────────┘
 
-### Feature Flags
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `embedding` | on | FastEmbed/ONNX Runtime for text embeddings |
-| `vector` | on | USearch for vector similarity search |
-| `tui` | on | Ratatui-based terminal interface |
-| `server` | off | Axum HTTP API server |
-| `mcp` | off | MCP server for AI assistants |
-
-## Quick Start
-
-### Prerequisites
-- Rust (stable)
-- System requirements listed in `docs/system-deps.md`
-
-### Build from Source
-
-```bash
-git clone https://github.com/nudgelang/liath-rs.git
-cd liath-rs
-cargo build --release
+┌────────────────────────────────────────────────────────────────┐
+│                    Liath (Programmable Memory)                  │
+│  Agent → Generates Lua Code → Complex Logic → Results          │
+│                                                                 │
+│  The LLM writes code like:                                      │
+│    local results = semantic_search("mem", query, 20)            │
+│    local recent = filter(results, function(r)                   │
+│        return r.age_days < 7 and r.importance > 0.8             │
+│    end)                                                         │
+│    return json.encode(top(recent, 5))                           │
+│                                                                 │
+│  Liath executes it SAFELY (sandboxed, no system access)         │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-### Run the TUI Console
+**Why this matters:**
+- LLMs can implement custom retrieval strategies
+- Agents adapt their memory queries to the current task
+- Complex filtering, ranking, cross-referencing - all possible
+- But it's SAFE - Lua sandbox blocks file/network/system access
 
-```bash
-cargo run --bin liath
+## Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│                   Liath                      │
+│                                              │
+│  ┌─────────────────────────────────────┐    │
+│  │           Lua Runtime               │    │
+│  │   Safe execution for agent logic    │    │
+│  └─────────────────────────────────────┘    │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐    │
+│  │ KV Store │ │ Vectors  │ │Embeddings│    │
+│  │  (Fjall) │ │(USearch) │ │(FastEmbed│    │
+│  └──────────┘ └──────────┘ └──────────┘    │
+└─────────────────────────────────────────────┘
 ```
 
-### Run the Simple CLI
+## Why Liath?
 
-```bash
-cargo run --bin liath -- cli --simple
-```
+| Problem | Liath Solution |
+|---------|----------------|
+| Fixed APIs limit retrieval strategies | **Programmable** - agents write query logic |
+| Agent code execution is dangerous | **Sandboxed Lua** - no system access |
+| Vector DBs require servers | **Embedded** - no infrastructure |
+| Memory systems are Python-only | **Rust core** - fast, portable |
+| Complex setup for AI storage | **Single dependency** - zero config |
 
-### Start the HTTP Server
-
-```bash
-cargo run --features server --bin liath -- server --port 3000
-```
-
-### Start the MCP Server
-
-```bash
-cargo run --features mcp --bin liath -- mcp
-```
-
-## Library Usage
-
-### Basic Key-Value Operations
-
-```rust
-use liath::{EmbeddedLiath, Config};
-
-fn main() -> anyhow::Result<()> {
-    let liath = EmbeddedLiath::new(Config::default())?;
-
-    // Create a namespace
-    liath.create_namespace("docs", 384, usearch::MetricKind::Cos, usearch::ScalarKind::F32)?;
-
-    // Store and retrieve data
-    liath.put("docs", b"hello", b"world")?;
-    let value = liath.get("docs", b"hello")?;
-    assert_eq!(value.as_deref(), Some(b"world".as_ref()));
-
-    Ok(())
-}
-```
-
-### Vector Search
-
-```rust
-use liath::{EmbeddedLiath, Config};
-
-fn main() -> anyhow::Result<()> {
-    let liath = EmbeddedLiath::new(Config::default())?;
-    liath.create_namespace("vectors", 384, usearch::MetricKind::Cos, usearch::ScalarKind::F32)?;
-
-    // Store text with automatic embedding
-    liath.store_with_embedding("vectors", "doc1", "Rust is a systems programming language")?;
-    liath.store_with_embedding("vectors", "doc2", "Python is great for data science")?;
-
-    // Semantic search
-    let results = liath.semantic_search("vectors", "programming languages", 5)?;
-    for (id, content, distance) in results {
-        println!("{}: {} (distance: {})", id, content, distance);
-    }
-
-    Ok(())
-}
-```
-
-### Agent Memory
-
-```rust
-use liath::agent::{Agent, MemoryEntry};
-
-fn main() -> anyhow::Result<()> {
-    let mut agent = Agent::new("my-agent", "./data")?;
-
-    // Store memories with tags
-    agent.memory.store(MemoryEntry {
-        content: "User prefers dark mode".to_string(),
-        tags: vec!["preference".to_string(), "ui".to_string()],
-        importance: 0.8,
-        ..Default::default()
-    })?;
-
-    // Recall memories semantically
-    let memories = agent.memory.recall("user interface preferences", 5)?;
-
-    // Manage conversations
-    agent.conversation.add_message("user", "Hello!")?;
-    agent.conversation.add_message("assistant", "Hi there!")?;
-
-    Ok(())
-}
-```
-
-### Lua Scripting
+## Quick Example
 
 ```rust
 use liath::{EmbeddedLiath, Config};
@@ -151,81 +69,352 @@ fn main() -> anyhow::Result<()> {
     let liath = EmbeddedLiath::new(Config::default())?;
     let executor = liath.query_executor();
 
-    // Execute Lua queries
+    // Store memories and execute agent logic - all in Lua
     let result = executor.execute(r#"
-        put("myns", "key1", "value1")
-        return get("myns", "key1")
-    "#, "user1").await?;
+        -- Store a memory with semantic indexing
+        store_with_embedding("memories", "m1", "User prefers dark mode")
+        store_with_embedding("memories", "m2", "User is learning Rust")
+        store_with_embedding("memories", "m3", "User likes coffee")
 
-    println!("Result: {}", result);
+        -- Semantic recall
+        local memories = semantic_search("memories", "programming", 2)
+
+        -- Transform results (agent logic runs safely in sandbox)
+        local summary = {}
+        for _, m in ipairs(memories) do
+            table.insert(summary, m.content)
+        end
+        return table.concat(summary, "; ")
+    "#, "agent-1").await?;
+
+    println!("{}", result);  // "User is learning Rust; ..."
     Ok(())
 }
 ```
 
-## HTTP API Endpoints
+## Core Concepts
 
-When running with `--features server`:
+### 1. Memory (Storage)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/namespaces` | List all namespaces |
-| POST | `/namespaces` | Create a namespace |
-| DELETE | `/namespaces/:name` | Delete a namespace |
-| GET | `/kv/:ns/:key` | Get a value |
-| PUT | `/kv/:ns/:key` | Store a value |
-| DELETE | `/kv/:ns/:key` | Delete a value |
-| POST | `/search/:ns` | Vector similarity search |
-| POST | `/semantic/:ns` | Text-to-vector semantic search |
-| POST | `/embed` | Generate embeddings |
-| POST | `/execute` | Execute Lua code |
+Liath provides three storage primitives:
 
-## MCP Server
+```lua
+-- Key-Value: Fast, typed storage
+put("config", "theme", "dark")
+local theme = get("config", "theme")
 
-When running with `--features mcp`, Liath provides MCP tools for AI assistants:
+-- Vectors: Similarity search
+store_vector("docs", "doc1", {0.1, 0.2, ...})
+local similar = vector_search("docs", query_vec, 10)
 
-- `liath_put` - Store a key-value pair
-- `liath_get` - Retrieve a value
-- `liath_delete` - Delete a key
-- `liath_list_namespaces` - List all namespaces
-- `liath_create_namespace` - Create a new namespace
-- `liath_semantic_search` - Semantic similarity search
-- `liath_execute` - Execute Lua code
-- Agent memory tools for storing and recalling memories
+-- Semantic: Text → embedding → vector (automatic)
+store_with_embedding("notes", "n1", "Meeting notes from Monday")
+local relevant = semantic_search("notes", "weekly meetings", 5)
+```
 
-## TUI Controls
+### 2. Runtime (Lua Scripting)
 
-| Key | Action |
-|-----|--------|
-| `i` | Enter insert mode |
-| `Esc` | Return to normal mode |
-| `Enter` | Execute query |
-| `Up/Down` | Navigate history |
-| `PageUp/PageDown` | Navigate result pages |
-| `q` | Quit |
+Agents need to execute logic safely. Liath's Lua runtime is:
 
-## Documentation
+- **Sandboxed**: No file system, no network, no system calls
+- **Fast**: Low-latency execution for real-time agents
+- **Simple**: LLMs can generate Lua easily
+- **Integrated**: Direct access to storage primitives
 
-- `docs/guide.md` - Quickstart and usage guide
-- `docs/architecture.md` - Module overview and data flow
-- `docs/system-deps.md` - Platform-specific dependencies
-- `docs/status.md` - Current status and roadmap
+```lua
+-- Complex retrieval logic that APIs can't express
+function find_relevant_context(query, user_id)
+    -- Semantic search
+    local memories = semantic_search("memories", query, 20)
+
+    -- Filter by recency
+    local dominated = filter(memories, function(m)
+        return m.timestamp > now() - 86400  -- Last 24 hours
+    end)
+
+    -- Boost by importance
+    local scored = map(recent, function(m)
+        m.score = m.similarity * m.importance
+        return m
+    end)
+
+    -- Return top results
+    return sort_by(scored, "score"):take(5)
+end
+```
+
+### 3. Agent Primitives
+
+Built-in support for agent workflows:
+
+```lua
+-- Conversation management
+add_message("conv-123", "user", "Hello!")
+add_message("conv-123", "assistant", "Hi there!")
+local history = get_messages("conv-123", 10)
+
+-- Tool state tracking
+set_tool_state("browser", "current_url", "https://example.com")
+local url = get_tool_state("browser", "current_url")
+
+-- Memory with tags
+store_memory("agent-1", {
+    content = "User mentioned they have a dog named Max",
+    tags = {"user-preference", "pets"},
+    importance = 0.8
+})
+local pet_memories = recall_by_tags("agent-1", {"pets"}, 5)
+```
+
+## Features
+
+| Category | Features |
+|----------|----------|
+| **Storage** | Namespaced KV, persistence, atomic operations |
+| **Vectors** | HNSW index, cosine/euclidean distance, batch ops |
+| **Embeddings** | Built-in FastEmbed, automatic text→vector |
+| **Scripting** | Lua 5.4, sandboxed, stdlib for agents |
+| **Agent API** | Memory, conversations, tool state |
+| **Interfaces** | TUI, CLI, HTTP API, MCP server |
+
+### Feature Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `embedding` | on | FastEmbed/ONNX for text embeddings |
+| `vector` | on | USearch for vector similarity |
+| `tui` | on | Interactive terminal interface |
+| `server` | off | HTTP API server |
+| `mcp` | off | MCP server for AI assistants |
+
+## Installation
+
+### As a Library
+
+```toml
+[dependencies]
+liath = "0.1"
+```
+
+### As a Binary
+
+```bash
+git clone https://github.com/nudgelang/liath-rs.git
+cd liath-rs
+cargo install --path .
+```
+
+## Usage
+
+### Embedded (Library)
+
+```rust
+use liath::{EmbeddedLiath, Config};
+
+let liath = EmbeddedLiath::new(Config::default())?;
+
+// Direct API
+liath.put("ns", b"key", b"value")?;
+liath.store_with_embedding("ns", "id", "text content")?;
+let results = liath.semantic_search("ns", "query", 10)?;
+
+// Lua execution
+let executor = liath.query_executor();
+let result = executor.execute("return get('ns', 'key')", "user").await?;
+```
+
+### TUI Console
+
+```bash
+liath              # Start TUI
+liath cli --simple # Simple readline mode
+```
+
+### HTTP Server
+
+```bash
+liath server --port 3000
+```
+
+```bash
+# Store with embedding
+curl -X POST localhost:3000/semantic/memories \
+  -H 'content-type: application/json' \
+  -d '{"id": "m1", "content": "User likes Python"}'
+
+# Semantic search
+curl -X POST localhost:3000/semantic/memories/search \
+  -H 'content-type: application/json' \
+  -d '{"query": "programming preferences", "limit": 5}'
+
+# Execute Lua
+curl -X POST localhost:3000/execute \
+  -H 'content-type: application/json' \
+  -d '{"query": "return semantic_search(\"memories\", \"coding\", 3)", "user_id": "agent"}'
+```
+
+### MCP Server
+
+For AI assistant integration (Claude, etc.):
+
+```bash
+liath mcp
+```
+
+Available tools:
+- `liath_put`, `liath_get`, `liath_delete` - KV operations
+- `liath_semantic_search` - Text similarity search
+- `liath_execute` - Run Lua code safely
+- `liath_store_memory`, `liath_recall_memory` - Agent memory
+
+## Lua Standard Library
+
+Liath extends Lua with agent-focused functions:
+
+### Storage
+```lua
+put(namespace, key, value)           -- Store value
+get(namespace, key) -> value         -- Retrieve value
+delete(namespace, key)               -- Delete key
+keys(namespace, prefix) -> list      -- List keys
+```
+
+### Vectors & Embeddings
+```lua
+embed(text) -> vector                -- Generate embedding
+store_vector(ns, id, vector)         -- Store vector
+vector_search(ns, vector, k) -> list -- Similarity search
+store_with_embedding(ns, id, text)   -- Text → embed → store
+semantic_search(ns, query, k) -> list -- Text similarity search
+```
+
+### Agent Memory
+```lua
+store_memory(agent, {content, tags, importance})
+recall(agent, query, k) -> memories
+recall_by_tags(agent, tags, k) -> memories
+```
+
+### Conversations
+```lua
+add_message(conv_id, role, content)
+get_messages(conv_id, limit) -> messages
+clear_conversation(conv_id)
+```
+
+### Utilities
+```lua
+now() -> timestamp                   -- Current Unix timestamp
+id() -> string                       -- Generate unique ID
+json.encode(table) -> string         -- Serialize to JSON
+json.decode(string) -> table         -- Parse JSON
+map(list, fn) -> list                -- Transform list
+filter(list, fn) -> list             -- Filter list
+reduce(list, fn, init) -> value      -- Reduce list
+```
 
 ## Examples
 
-See the `examples/` directory:
-- `embedded.rs` - Basic embedded usage
-- `vector_search.rs` - Vector similarity search
-- `agent_usage.rs` - Agent memory and conversations
-- `lua_scripting.rs` - Lua query interface
+### Agent with Long-Term Memory
 
-Run examples with:
-```bash
-cargo run --example embedded
-cargo run --example vector_search
-cargo run --example agent_usage
-cargo run --example lua_scripting
+```lua
+-- Store experiences as they happen
+function remember(agent_id, experience)
+    store_memory(agent_id, {
+        content = experience,
+        tags = extract_tags(experience),
+        importance = assess_importance(experience),
+        timestamp = now()
+    })
+end
+
+-- Recall relevant context for a task
+function get_context(agent_id, task)
+    local semantic = recall(agent_id, task, 10)
+    local recent = recall_recent(agent_id, 5)
+    return merge_and_rank(semantic, recent)
+end
 ```
+
+### Safe Code Execution for Tools
+
+```lua
+-- Agent can execute this safely - no system access
+function analyze_data(data_json)
+    local data = json.decode(data_json)
+    local total = reduce(data, function(acc, item)
+        return acc + item.value
+    end, 0)
+    return json.encode({
+        count = #data,
+        total = total,
+        average = total / #data
+    })
+end
+```
+
+### Conversation with Context Injection
+
+```lua
+function chat(conv_id, user_message)
+    -- Store user message
+    add_message(conv_id, "user", user_message)
+
+    -- Get relevant memories
+    local context = semantic_search("knowledge", user_message, 3)
+
+    -- Get conversation history
+    local history = get_messages(conv_id, 10)
+
+    -- Return context for LLM
+    return {
+        history = history,
+        context = context,
+        user_message = user_message
+    }
+end
+```
+
+## Architecture
+
+```
+liath-rs/
+├── src/
+│   ├── lib.rs           # Public API
+│   ├── core/            # Storage engine (Fjall)
+│   ├── lua/             # Lua runtime & stdlib
+│   ├── agent/           # Agent primitives
+│   ├── query/           # Query executor
+│   ├── cli/             # TUI & console
+│   ├── server/          # HTTP API
+│   └── mcp/             # MCP server
+├── examples/
+│   ├── embedded.rs      # Basic usage
+│   ├── vector_search.rs # Similarity search
+│   ├── agent_usage.rs   # Agent memory
+│   ├── agent_runtime.rs # Lua scripting
+│   └── lua_scripting.rs # Advanced Lua
+└── lua/
+    └── examples/        # Lua script examples
+```
+
+## Comparison
+
+| Feature | Liath | Chroma | Qdrant | Zep | SQLite |
+|---------|-------|--------|--------|-----|--------|
+| Embedded (no server) | ✅ | ⚠️ | ❌ | ❌ | ✅ |
+| Vector search | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Built-in embeddings | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Agent memory API | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Safe code execution | ✅ Lua | ❌ | ❌ | ❌ | ❌ |
+| Rust native | ✅ | ❌ | ✅ | ❌ | ❌ |
+
+## Documentation
+
+- [Guide](docs/guide.md) - Getting started
+- [Architecture](docs/architecture.md) - System design
+- [Lua Reference](docs/lua-reference.md) - Complete Lua API
+- [Status](docs/status.md) - Project status
 
 ## License
 

@@ -14,6 +14,7 @@ readme = "README.md"
 [lib]
 name = "liath"
 path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
 
 [[bin]]
 name = "liath"
@@ -26,6 +27,7 @@ vector = ["usearch"]
 server = ["axum"]
 tui = ["ratatui", "crossterm"]
 mcp = []
+python = ["pyo3"]
 
 [dependencies]
 fjall = "2.2"
@@ -52,6 +54,8 @@ crossterm = { version = "0.28", optional = true }
 rand = "0.8.5"
 half = "2.6.0"
 uuid = { version = "1", features = ["v4"] }
+regex = "1.10"
+pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
 
 # Resolve version conflicts
 [dependencies.rand_core]
