@@ -1,0 +1,134 @@
+site_name: Liath Documentation
+site_description: The SQLite for AI Agents - Programmable Memory Database
+site_author: Dipankar Sarkar
+site_url: https://liath.dev
+
+repo_url: https://github.com/skelf-research/liath-rs
+repo_name: skelf-research/liath-rs
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - toc:
+      permalink: true
+      toc_depth: 4
+
+plugins:
+  - search
+  - tags
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started/index.md
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+    - First Agent: getting-started/first-agent.md
+    - Configuration: getting-started/configuration.md
+  - Core Concepts:
+    - concepts/index.md
+    - Programmable Memory: concepts/programmable-memory.md
+    - Architecture: concepts/architecture.md
+    - Namespaces: concepts/namespaces.md
+    - Vector Search: concepts/vector-search.md
+    - Embeddings: concepts/embeddings.md
+  - Guides:
+    - guides/index.md
+    - Lua Scripting: guides/lua-scripting.md
+    - Building AI Agents: guides/building-agents.md
+    - Memory Patterns: guides/memory-patterns.md
+    - Conversation Management: guides/conversations.md
+    - Tool State: guides/tool-state.md
+    - Error Handling: guides/error-handling.md
+    - Security: guides/security.md
+    - Performance: guides/performance.md
+  - API Reference:
+    - api/index.md
+    - EmbeddedLiath: api/embedded-liath.md
+    - Agent API: api/agent-api.md
+    - Memory: api/memory.md
+    - Conversation: api/conversation.md
+    - ToolState: api/tool-state.md
+    - QueryExecutor: api/query-executor.md
+    - Lua Standard Library: api/lua-stdlib.md
+    - Error Types: api/errors.md
+  - Integrations:
+    - integrations/index.md
+    - HTTP Server: integrations/http-server.md
+    - MCP Server: integrations/mcp-server.md
+    - Python Bindings: integrations/python.md
+  - CLI Reference:
+    - cli/index.md
+    - Commands: cli/commands.md
+    - Interactive Mode: cli/interactive.md
+    - TUI: cli/tui.md
+  - Examples:
+    - examples/index.md
+    - Basic Usage: examples/basic.md
+    - Vector Search: examples/vector-search.md
+    - Agent Patterns: examples/agent-patterns.md
+    - RAG Applications: examples/rag.md
+    - Multi-Agent Systems: examples/multi-agent.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/skelf-research/liath-rs
+  version:
+    provider: mike
+
+extra_css:
+  - stylesheets/extra.css

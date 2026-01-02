@@ -1,0 +1,233 @@
+/* Liath Documentation - Custom Styles */
+
+/* Primary color theme matching Liath branding */
+:root {
+  --md-primary-fg-color: #1a73e8;
+  --md-primary-fg-color--light: #4285f4;
+  --md-primary-fg-color--dark: #1557b0;
+  --md-accent-fg-color: #ff6d00;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #4285f4;
+  --md-primary-fg-color--light: #669df6;
+  --md-primary-fg-color--dark: #1a73e8;
+  --md-accent-fg-color: #ff9100;
+}
+
+/* Code block enhancements */
+.md-typeset code {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+}
+
+[data-md-color-scheme="slate"] .md-typeset code {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Feature cards on index pages */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.feature-card {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background: var(--md-code-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  transition: box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.feature-card h3 {
+  margin-top: 0;
+  color: var(--md-primary-fg-color);
+}
+
+/* Admonition customizations */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: #00c853;
+}
+
+.md-typeset .tip > .admonition-title,
+.md-typeset .tip > summary {
+  background-color: rgba(0, 200, 83, 0.1);
+}
+
+.md-typeset .admonition.performance,
+.md-typeset details.performance {
+  border-color: #ff6d00;
+}
+
+.md-typeset .performance > .admonition-title,
+.md-typeset .performance > summary {
+  background-color: rgba(255, 109, 0, 0.1);
+}
+
+/* API method signatures */
+.api-signature {
+  font-family: var(--md-code-font-family);
+  background: var(--md-code-bg-color);
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.api-signature .keyword {
+  color: #d73a49;
+}
+
+.api-signature .function {
+  color: #6f42c1;
+}
+
+.api-signature .type {
+  color: #005cc5;
+}
+
+[data-md-color-scheme="slate"] .api-signature .keyword {
+  color: #f97583;
+}
+
+[data-md-color-scheme="slate"] .api-signature .function {
+  color: #b392f0;
+}
+
+[data-md-color-scheme="slate"] .api-signature .type {
+  color: #79b8ff;
+}
+
+/* Table enhancements */
+.md-typeset table:not([class]) {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--md-primary-fg-color);
+  color: white;
+  font-weight: 600;
+}
+
+.md-typeset table:not([class]) td,
+.md-typeset table:not([class]) th {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset table:not([class]) tr:nth-child(even) {
+  background: var(--md-code-bg-color);
+}
+
+/* Navigation improvements */
+.md-nav__link {
+  transition: color 0.15s ease;
+}
+
+.md-nav__link:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* Mermaid diagram styling */
+.mermaid {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+/* Hero section for index page */
+.hero {
+  text-align: center;
+  padding: 3rem 1rem;
+  margin-bottom: 2rem;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  font-size: 1.25rem;
+  color: var(--md-default-fg-color--light);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Badge styling for version indicators */
+.badge {
+  display: inline-block;
+  padding: 0.2em 0.6em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-left: 0.5em;
+}
+
+.badge-new {
+  background: #00c853;
+  color: white;
+}
+
+.badge-experimental {
+  background: #ff6d00;
+  color: white;
+}
+
+.badge-deprecated {
+  background: #d73a49;
+  color: white;
+}
+
+/* Quick reference boxes */
+.quick-ref {
+  background: var(--md-code-bg-color);
+  border-left: 4px solid var(--md-primary-fg-color);
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.quick-ref h4 {
+  margin-top: 0;
+  color: var(--md-primary-fg-color);
+}
+
+/* Responsive improvements */
+@media screen and (max-width: 76.1875em) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero p {
+    font-size: 1.1rem;
+  }
+}
+
+@media screen and (max-width: 44.9375em) {
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Print styles */
+@media print {
+  .md-sidebar,
+  .md-header,
+  .md-footer {
+    display: none;
+  }
+
+  .md-content {
+    max-width: 100%;
+  }
+}
